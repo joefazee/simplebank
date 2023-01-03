@@ -25,6 +25,9 @@ migratedown:
 migratedown1:
 	 migrate -path db/migration -database "postgresql://root:secret@localhost:5455/simple_bank?sslmode=disable" -verbose down 1
 
+docker-aws-login:
+	aws ecr get-login-password | docker login --username AWS --password-stdin 567824320719.dkr.ecr.us-east-1.amazonaws.com
+	
 sqlc:
 	sqlc generate
 

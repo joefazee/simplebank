@@ -40,5 +40,7 @@ mock:
 server:
 	go run .
 
+keygen:
+	@openssl rand -hex 64 | head -c 32
 
 .PHONY: createdb postgres dropdb migrateup migrateup1 migratedown migratedown1 sqlc server mock

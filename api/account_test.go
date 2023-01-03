@@ -160,6 +160,138 @@ func TestGetAccount(t *testing.T) {
 
 }
 
+func TestListAccount(t *testing.T) {
+
+	user, _ := createRandomUser(t)
+	n := 5 
+
+	accounts := make([]db.Account, n)
+	for i := 0; i < n; i++ {
+		accounts[i] = randomAccount(user.Username)
+	}
+
+	type Query struct {
+		pageId int 
+		pageSize int
+	}
+
+	testCases := []struct{
+		name string 
+		query Query
+		setupAuth func (t *testing.T, req *http.Request, tokenMaker token.Maker)
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, rr *httptest.ResponseRecorder)
+	}{
+		{
+			name: "OK",
+			query: Query{pageId: 1, pageSize: n},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, req, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.ListAccountsParams{
+					Owner: user.Username,
+					Limit: int32(n),
+					Offset: 0,
+				}
+
+				store.EXPECT(). 
+					ListAccounts(gomock.Any(), gomock.Eq(arg)). 
+					Times(1).
+					Return(accounts, nil)
+			},
+			checkResponse: func(t *testing.T, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, rr.Code)
+				requireBodyMatchAccounts(t, rr.Body, accounts)
+			},
+		},
+		{
+			name: "StatusBadRequest",
+			query: Query{pageId: 0, pageSize: n},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, req, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT(). 
+					ListAccounts(gomock.Any(), gomock.Any()). 
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, rr.Code)
+			},
+		},
+		{
+			name: "StatusInternalServerError",
+			query: Query{pageId: 1, pageSize: n},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, req, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.ListAccountsParams{
+					Owner: user.Username,
+					Limit: int32(n),
+					Offset: 0,
+				}
+
+				store.EXPECT(). 
+					ListAccounts(gomock.Any(), gomock.Eq(arg)). 
+					Times(1).
+					Return([]db.Account{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, rr.Code)
+			},
+		},
+		{
+			name: "NoAuthorization",
+			query: Query{
+				pageId:   1,
+				pageSize: n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					ListAccounts(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, rr *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, rr.Code)
+			},
+		},
+
+		
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := newTestServer(t, store)
+			rr := httptest.NewRecorder()
+
+			req, err := http.NewRequest(http.MethodGet, "/accounts", nil)
+			require.NoError(t, err)
+
+			q := req.URL.Query()
+			q.Add("page_id", fmt.Sprintf("%d", tc.query.pageId))
+			q.Add("page_size", fmt.Sprintf("%d", tc.query.pageSize))
+			req.URL.RawQuery = q.Encode()
+
+			tc.setupAuth(t, req, server.tokenMaker)
+			server.router.ServeHTTP(rr, req)
+
+			tc.checkResponse(t, rr)
+		})
+	}
+	
+}
+
 func randomAccount(owner string) db.Account {
 	return db.Account{
 		ID:       util.RandomInt(1, 1000),
@@ -179,4 +311,15 @@ func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account db.Accoun
 	require.NoError(t, err)
 
 	require.Equal(t, gotAccount, account)
+}
+
+
+func requireBodyMatchAccounts(t *testing.T, body *bytes.Buffer, accounts []db.Account) {
+	data, err := io.ReadAll(body)
+	require.NoError(t, err)
+
+	var gotAccounts []db.Account
+	err = json.Unmarshal(data, &gotAccounts)
+	require.NoError(t, err)
+	require.Equal(t, accounts, gotAccounts)
 }

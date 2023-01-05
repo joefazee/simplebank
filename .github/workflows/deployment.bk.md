@@ -1,13 +1,13 @@
-name: Build & Deploy
+not-a-work-workname: Build & Deploy
 
 on:
-  push:
-    branches: ["main"]
+push:
+branches: ["main"]
 
 jobs:
-  build:
-    name: Build image
-    runs-on: ubuntu-latest
+build:
+name: Build image
+runs-on: ubuntu-latest
 
     steps:
       - name: Check out code

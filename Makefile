@@ -32,6 +32,7 @@ docker-aws-login:
 	
 sqlc:
 	sqlc generate
+	make mock
 
 test:
 	go test -v -cover ./...
@@ -40,7 +41,7 @@ format:
 	go fmt ./...
 
 mock:
-	mockgen -destination db/mock/store.go --package=mockdb -source db/sqlc/store.go
+	mockgen -destination db/mock/store.go --package=mockdb -source db/sqlc/store.go -aux_files github.com/joefazee/simplebank/db/sqlc=db/sqlc/querier.go
 	
 server:
 	go run .

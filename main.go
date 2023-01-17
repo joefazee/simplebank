@@ -59,11 +59,11 @@ func runDBMigration(migrationURL, dbSource string) {
 	migration, err := migrate.New(migrationURL, dbSource)
 
 	if err != nil {
-		log.Fatal().Msgf("migration error", err)
+		log.Fatal().Msgf("migration error %s", err)
 	}
 
 	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal().Msgf("migration error", err)
+		log.Fatal().Msgf("migration error %s", err)
 	}
 
 	log.Info().Msg("migration successful")
@@ -98,7 +98,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 
 	server, err := gapi.NewServer(config, store)
 	if err != nil {
-		log.Fatal().Msgf("unable to create grpc server", err)
+		log.Fatal().Msgf("unable to create grpc server %s", err)
 	}
 
 	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
@@ -116,7 +116,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 
 	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
 	if err != nil {
-		log.Fatal().Msgf("unable to register server handler", err)
+		log.Fatal().Msgf("unable to register server handler %s", err)
 	}
 
 	mux := http.NewServeMux()

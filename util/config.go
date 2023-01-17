@@ -15,6 +15,7 @@ type Config struct {
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFERESH_TOKEN_DURATION"`
 	DbMigrationURL       string        `mapstructure:"MIGRATION_URL"`
+	Environment          string        `mapstructure:"ENVIRONMENT"`
 }
 
 func LoadCondfig(p string) (config Config, err error) {

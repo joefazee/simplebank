@@ -6,6 +6,13 @@ services:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=simple_bank
+  # redis
+  redis:
+    image: 'redis:7-alpine'
+    ports:
+      - "6379:6379"
+    restart: always
+
 
   api:
     build:
@@ -15,8 +22,11 @@ services:
       - "4000:4000"
     environment:
       - DB_SOURCE=postgresql://root:secret@simplebank-db:5432/simple_bank?sslmode=disable
+      - REDIS_ADDRESS=redis:6379
+      - ENVIRONMENT=production
     depends_on:
       - simplebank-db
+      - redis
     entrypoint:
       ["/app/wait-for.sh", "simplebank-db:5432", "--", "/app/start.sh"]
 

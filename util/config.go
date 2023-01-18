@@ -16,6 +16,7 @@ type Config struct {
 	RefreshTokenDuration time.Duration `mapstructure:"REFERESH_TOKEN_DURATION"`
 	DbMigrationURL       string        `mapstructure:"MIGRATION_URL"`
 	Environment          string        `mapstructure:"ENVIRONMENT"`
+	RedisAddress         string        `mapstructure:"REDIS_ADDRESS"`
 }
 
 func LoadCondfig(p string) (config Config, err error) {

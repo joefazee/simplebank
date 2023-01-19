@@ -1,7 +1,6 @@
 package gapi
 
 import (
-	"github.com/hibiken/asynq"
 	"github.com/joefazee/simplebank/worker"
 	"os"
 	"testing"
@@ -13,14 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestServer(t *testing.T, store db.Store) *Server {
+func newTestServer(t *testing.T, store db.Store, taskDistributor worker.TaskDistributor) *Server {
 	config := util.Config{
 		TokenSymmetricKey:   util.RandomString(32),
 		AccessTokenDuration: time.Minute,
 	}
 
-	redisOpt := asynq.RedisClientOpt{Addr: config.RedisAddress}
-	taskDistributor := worker.NewRedisTaskTaskDistributor(redisOpt)
+	//redisOpt := asynq.RedisClientOpt{Addr: config.RedisAddress}
+	//taskDistributor := worker.NewRedisTaskTaskDistributor(redisOpt)
 
 	server, err := NewServer(config, store, taskDistributor)
 	require.NoError(t, err)

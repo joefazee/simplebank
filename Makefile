@@ -42,6 +42,8 @@ format:
 
 mock:
 	mockgen -destination db/mock/store.go --package=mockdb -source db/sqlc/store.go -aux_files github.com/joefazee/simplebank/db/sqlc=db/sqlc/querier.go
+	mockgen -destination worker/mock/distributor.go --package=mockdistributor -source worker/distributor.go
+
 	
 server:
 	go run .

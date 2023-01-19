@@ -7,6 +7,7 @@ import (
 	mockdb "github.com/joefazee/simplebank/db/mock"
 	db "github.com/joefazee/simplebank/db/sqlc"
 	"github.com/joefazee/simplebank/pb"
+	mockdistributor "github.com/joefazee/simplebank/worker/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -121,13 +122,13 @@ func TestServer_LoginUser(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
+			taskDistributor := mockdistributor.NewMockTaskDistributor(ctrl)
 			defer ctrl.Finish()
 
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
-
+			server := newTestServer(t, store, taskDistributor)
 			res, err := server.LoginUser(context.Background(), tc.req)
 			tc.checkResponse(res, err)
 		})
